@@ -1,1 +1,1 @@
-# DATA-STRUCTURE-EXAM-223013760-MPUMURE-Esperance
+The first program prints "Hello, World!", confirming a functional setup. The second displays structured data output, while the third performs basic arithmetic operations.
