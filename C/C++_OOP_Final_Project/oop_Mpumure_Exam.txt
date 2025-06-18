@@ -1,0 +1,125 @@
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+struct InsApplicant {
+    char vin[17];  
+    int age;
+    char vtype[10];
+};
+
+struct Bracket {
+    float minAge;
+    float maxAge;
+    float premium;
+};
+
+class PremiumCalculator {
+protected:
+    Bracket* brackets;
+    int count;
+
+public:
+    PremiumCalculator() : brackets(nullptr), count(0) {}
+
+    virtual float calculate(const InsApplicant* applicant) = 0;
+
+    void addBracket(const Bracket& b) {
+        Bracket* newBrackets = new Bracket[count + 1];
+        for (int i = 0; i < count; ++i)
+            *(newBrackets + i) = *(brackets + i);
+        *(newBrackets + count) = b;
+        delete[] brackets;
+        brackets = newBrackets;
+        ++count;
+    }
+
+    void removeBracket(int index) {
+        if (index < 0 || index >= count) return;
+        Bracket* newBrackets = new Bracket[count - 1];
+        for (int i = 0, j = 0; i < count; ++i) {
+            if (i == index) continue;
+            *(newBrackets + j) = *(brackets + i);
+            ++j;
+        }
+        delete[] brackets;
+        brackets = newBrackets;
+        --count;
+    }
+
+    virtual ~PremiumCalculator() {
+        delete[] brackets;
+    }
+
+protected:
+    float findPremium(float age) const {
+        for (int i = 0; i < count; ++i) {
+            if (age >= (*(brackets + i)).minAge && age <= (*(brackets + i)).maxAge)
+                return (*(brackets + i)).premium;
+        }
+        return 0.0f; 
+    }
+};
+
+class BasicPremiumCalculator : public PremiumCalculator {
+public:
+    float calculate(const InsApplicant* applicant) override {
+        return findPremium(applicant->age);
+    }
+};
+
+class GoldPremiumCalculator : public PremiumCalculator {
+public:
+    float calculate(const InsApplicant* applicant) override {
+        return 1.2f * findPremium(applicant->age); 
+    }
+};
+
+void inputApplicant(InsApplicant* app) {
+    cout << "Enter VIN (17 characters): ";
+    cin >> app->vin;
+    cout << "Enter age: ";
+    cin >> app->age;
+    cout << "Enter vehicle type: ";
+    cin >> app->vtype;
+}
+
+void printResult(const InsApplicant* app, float premium, const string& plan) {
+    cout << "\n--- Premium Calculation Result ---\n";
+    cout << "VIN: " << app->vin << "\n";
+    cout << "Age: " << app->age << "\n";
+    cout << "Vehicle Type: " << app->vtype << "\n";
+    cout << "Plan: " << plan << "\n";
+    cout << "Premium: $" << premium << "\n\n";
+}
+
+int main() {
+    InsApplicant applicant;
+    inputApplicant(&applicant);
+
+    PremiumCalculator** calculators = new PremiumCalculator*[2];
+    calculators[0] = new BasicPremiumCalculator();
+    calculators[1] = new GoldPremiumCalculator();
+
+    Bracket b1 = {18, 25, 100.0f};
+    Bracket b2 = {26, 40, 75.0f};
+    Bracket b3 = {41, 65, 60.0f};
+
+    for (int i = 0; i < 2; ++i) {
+        calculators[i]->addBracket(b1);
+        calculators[i]->addBracket(b2);
+        calculators[i]->addBracket(b3);
+    }
+
+    float basic = calculators[0]->calculate(&applicant);
+    float gold = calculators[1]->calculate(&applicant);
+
+    printResult(&applicant, basic, "Basic");
+    printResult(&applicant, gold, "Gold");
+
+    delete calculators[0];
+    delete calculators[1];
+    delete[] calculators;
+
+    return 0;
+}
